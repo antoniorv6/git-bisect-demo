@@ -1,7 +1,3 @@
-"""
-Capa de almacenamiento para persistir datos
-"""
-
 import json
 import os
 from typing import List, Optional
@@ -17,6 +13,7 @@ class Storage:
         self.tasks_file = os.path.join(data_dir, "tasks.json")
         self.projects_file = os.path.join(data_dir, "projects.json")
         self._ensure_data_dir()
+        self._cache = {}  # Cache simple para mejorar rendimiento
     
     def _ensure_data_dir(self):
         """Crea el directorio de datos si no existe"""
@@ -28,9 +25,14 @@ class Storage:
         data = [task.to_dict() for task in tasks]
         with open(self.tasks_file, 'w') as f:
             json.dump(data, f, indent=2)
+        self._cache.clear()  # Invalidar cache
     
     def load_tasks(self) -> List[Task]:
-        """Carga las tareas desde el archivo JSON"""
+        """Carga las tareas desde el archivo JSON con cache"""
+        cache_key = 'tasks'
+        if cache_key in self._cache:
+            return self._cache[cache_key]
+        
         if not os.path.exists(self.tasks_file):
             return []
         
@@ -46,4 +48,5 @@ class Storage:
             task.tags = item['tags']
             tasks.append(task)
         
+        self._cache[cache_key] = tasks
         return tasks
